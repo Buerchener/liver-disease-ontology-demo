@@ -172,15 +172,42 @@ function isVisibleBySource(item, selected) {
   return selected === "all" || item.source === selected;
 }
 
+function nodeRadius(node) {
+  return node.type === "Disease" ? 31 : 28;
+}
+
+function edgeEndpoints(edge) {
+  const startCenter = nodePosition(nodeById(edge.from));
+  const endCenter = nodePosition(nodeById(edge.to));
+  const dx = endCenter.x - startCenter.x;
+  const dy = endCenter.y - startCenter.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const unitX = dx / length;
+  const unitY = dy / length;
+  const startInset = nodeRadius(nodeById(edge.from)) + 3;
+  const endInset = nodeRadius(nodeById(edge.to)) + 3;
+
+  return {
+    start: {
+      x: startCenter.x + unitX * startInset,
+      y: startCenter.y + unitY * startInset,
+    },
+    end: {
+      x: endCenter.x - unitX * endInset,
+      y: endCenter.y - unitY * endInset,
+    },
+  };
+}
+
 function edgePath(edge) {
   const a = nodeById(edge.from);
   const b = nodeById(edge.to);
-  const start = nodePosition(a);
-  const end = nodePosition(b);
   if (edge.from === edge.to) {
+    const start = nodePosition(a);
     const radius = a.type === "Disease" ? 42 : 38;
     return `M ${start.x - radius * 0.35} ${start.y - radius} C ${start.x - radius * 1.25} ${start.y - radius * 1.75}, ${start.x + radius * 1.25} ${start.y - radius * 1.75}, ${start.x + radius * 0.35} ${start.y - radius}`;
   }
+  const { start, end } = edgeEndpoints(edge);
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const curve = Math.min(90, Math.max(-90, dx * 0.18 + dy * 0.08));
@@ -396,8 +423,7 @@ function showEdgeDetails(edge, index) {
     ["Source", edge.source],
     ["Evidence", edge.evidence],
     ["Cardinality", edge.cardinality || "not specified"],
-    ["From entity", `${a.label} (${a.type})`],
-    ["To entity", `${b.label} (${b.type})`],
+    ["Entity pair", `${a.label} (${a.type}) <-> ${b.label} (${b.type})`],
   ]);
   renderGraph(`edge-${index}`);
 }
@@ -432,16 +458,7 @@ function renderGraph(activeId = null) {
   renderedNodes = [];
   applyViewBox();
 
-  svg.innerHTML = `
-    <defs>
-      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-        <path d="M0,0 L0,6 L8,3 z" fill="#95a39c"></path>
-      </marker>
-      <marker id="arrowActive" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-        <path d="M0,0 L0,6 L8,3 z" fill="#c88322"></path>
-      </marker>
-    </defs>
-  `;
+  svg.innerHTML = "";
 
   visibleEdges.forEach((edge, index) => {
     const a = nodeById(edge.from);
@@ -452,7 +469,6 @@ function renderGraph(activeId = null) {
     path.setAttribute("d", edgePath(edge));
     path.setAttribute("class", `edge ${edge.cardinality === "N:M" ? "many-to-many" : ""} ${activeId && !isActive ? "dim" : ""} ${isActive ? "active" : ""}`);
     path.setAttribute("fill", "none");
-    path.setAttribute("marker-end", isActive ? "url(#arrowActive)" : "url(#arrow)");
     path.addEventListener("click", () => {
       showEdgeDetails(edge, index);
     });
@@ -475,7 +491,7 @@ function renderGraph(activeId = null) {
     group.setAttribute("class", `node ${isActive ? "active" : ""} ${isDim ? "dim" : ""}`);
     group.setAttribute("transform", `translate(${position.x}, ${position.y})`);
     group.innerHTML = `
-      <circle r="${node.type === "Disease" ? 31 : 28}" fill="${classes[node.type]}"></circle>
+      <circle r="${nodeRadius(node)}" fill="${classes[node.type]}"></circle>
       <text y="52">${node.label}</text>
     `;
     const circle = group.querySelector("circle");

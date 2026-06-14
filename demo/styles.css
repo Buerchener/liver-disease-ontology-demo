@@ -392,10 +392,13 @@ select {
   stroke-width: 5px;
 }
 
-.node.dim,
+.node.dim {
+  opacity: 0.14;
+}
+
 .edge.dim,
 .edge-label.dim {
-  opacity: 0.14;
+  opacity: 0.24;
 }
 
 .node.active circle {
