@@ -337,10 +337,16 @@ select {
   opacity: 0.68;
 }
 
+.edge.many-to-many {
+  stroke-dasharray: 7 5;
+  stroke-width: 2.6;
+}
+
 .edge.active {
   stroke: var(--amber);
   stroke-width: 4;
   opacity: 1;
+  stroke-dasharray: none;
 }
 
 .edge-label {

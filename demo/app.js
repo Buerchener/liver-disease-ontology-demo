@@ -57,20 +57,20 @@ const schemaNodes = [
 ];
 
 const schemaEdges = [
-  { from: "Disease", to: "Disease", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -10] },
-  { from: "Gene", to: "Disease", label: "associated_with", source: "DisGeNET", evidence: "curated_database", labelOffset: [-20, -16] },
-  { from: "Gene", to: "Protein", label: "encodes", source: "STRING", evidence: "curated_database", labelOffset: [-28, 16] },
-  { from: "Protein", to: "Protein", label: "interacts_with", source: "STRING", evidence: "curated_database", labelOffset: [0, 18] },
-  { from: "Gene", to: "Pathway", label: "participates_in", source: "KEGG", evidence: "curated_database", labelOffset: [8, 18] },
-  { from: "Protein", to: "Pathway", label: "involved_in", source: "KEGG", evidence: "curated_database", labelOffset: [-8, -20] },
-  { from: "Pathway", to: "Disease", label: "associated_with_pathogenesis", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [22, -20] },
-  { from: "Metabolite", to: "Pathway", label: "involved_in_pathway", source: "HMDB", evidence: "curated_database", labelOffset: [18, 20] },
-  { from: "Metabolite", to: "Disease", label: "associated_with_metabolic_change", source: "HMDB", evidence: "literature_supported", labelOffset: [90, 20] },
-  { from: "Pathway", to: "Pathway", label: "subpathway_of", source: "Reactome", evidence: "curated_database", labelOffset: [0, -35] },
-  { from: "Protein", to: "Tissue", label: "expressed_in_tissue", source: "HPA", evidence: "curated_database", labelOffset: [-32, 18] },
-  { from: "Protein", to: "CellType", label: "expressed_in_celltype", source: "HPA", evidence: "curated_database", labelOffset: [-65, 28] },
-  { from: "CellType", to: "Tissue", label: "located_in", source: "HPA", evidence: "curated_database", labelOffset: [35, 18] },
-  { from: "CellType", to: "Disease", label: "involved_in_disease", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [14, -16] },
+  { from: "Disease", to: "Disease", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -10] },
+  { from: "Gene", to: "Disease", label: "associated_with", cardinality: "N:M", source: "DisGeNET", evidence: "curated_database", labelOffset: [-20, -16] },
+  { from: "Gene", to: "Protein", label: "encodes", cardinality: "1:N", source: "STRING", evidence: "curated_database", labelOffset: [-28, 16] },
+  { from: "Protein", to: "Protein", label: "interacts_with", cardinality: "N:M", source: "STRING", evidence: "curated_database", labelOffset: [0, 18] },
+  { from: "Gene", to: "Pathway", label: "participates_in", cardinality: "N:M", source: "KEGG", evidence: "curated_database", labelOffset: [8, 18] },
+  { from: "Protein", to: "Pathway", label: "involved_in", cardinality: "N:M", source: "KEGG", evidence: "curated_database", labelOffset: [-8, -20] },
+  { from: "Pathway", to: "Disease", label: "associated_with_pathogenesis", cardinality: "N:M", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [22, -20] },
+  { from: "Metabolite", to: "Pathway", label: "involved_in_pathway", cardinality: "N:M", source: "HMDB", evidence: "curated_database", labelOffset: [18, 20] },
+  { from: "Metabolite", to: "Disease", label: "associated_with_metabolic_change", cardinality: "N:M", source: "HMDB", evidence: "literature_supported", labelOffset: [90, 20] },
+  { from: "Pathway", to: "Pathway", label: "subpathway_of", cardinality: "N:M", source: "Reactome", evidence: "curated_database", labelOffset: [0, -35] },
+  { from: "Protein", to: "Tissue", label: "expressed_in_tissue", cardinality: "N:M", source: "HPA", evidence: "curated_database", labelOffset: [-32, 18] },
+  { from: "Protein", to: "CellType", label: "expressed_in_celltype", cardinality: "N:M", source: "HPA", evidence: "curated_database", labelOffset: [-65, 28] },
+  { from: "CellType", to: "Tissue", label: "located_in", cardinality: "N:1", source: "HPA", evidence: "curated_database", labelOffset: [35, 18] },
+  { from: "CellType", to: "Disease", label: "involved_in_disease", cardinality: "N:M", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [14, -16] },
 ];
 
 const exampleNodes = [
@@ -92,22 +92,22 @@ const exampleNodes = [
 ];
 
 const exampleEdges = [
-  { from: "healthy", to: "nafld", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
-  { from: "nafld", to: "nash", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
-  { from: "nash", to: "fibrosis", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
-  { from: "fibrosis", to: "cirrhosis", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
-  { from: "cirrhosis", to: "hcc", label: "progresses_to", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
-  { from: "pnpla3", to: "nafld", label: "associated_with", source: "DisGeNET", evidence: "curated_database", labelOffset: [-18, 8] },
-  { from: "tnf", to: "nash", label: "associated_with", source: "DisGeNET", evidence: "curated_database", labelOffset: [18, 8] },
-  { from: "tnf", to: "tnfp", label: "encodes", source: "STRING", evidence: "curated_database", labelOffset: [-25, -22] },
-  { from: "tnfp", to: "nfkb", label: "involved_in", source: "KEGG", evidence: "curated_database", labelOffset: [0, -20] },
-  { from: "nfkb", to: "reactomeHierarchy", label: "subpathway_of", source: "Reactome", evidence: "curated_database", labelOffset: [8, -18] },
-  { from: "nfkb", to: "nash", label: "associated_with_pathogenesis", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [16, -20] },
-  { from: "bile", to: "cirrhosis", label: "associated_with_metabolic_change", source: "HMDB", evidence: "literature_supported", labelOffset: [-35, 36] },
-  { from: "tnfp", to: "liver", label: "expressed_in_tissue", source: "HPA", evidence: "curated_database", labelOffset: [-18, 16] },
-  { from: "kupffer", to: "liver", label: "located_in", source: "HPA", evidence: "curated_database", labelOffset: [0, 18] },
-  { from: "kupffer", to: "nash", label: "involved_in_disease", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [62, -46] },
-  { from: "candidate", to: "fibrosis", label: "associated_with_pathogenesis", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [-6, 24] },
+  { from: "healthy", to: "nafld", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
+  { from: "nafld", to: "nash", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
+  { from: "nash", to: "fibrosis", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
+  { from: "fibrosis", to: "cirrhosis", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
+  { from: "cirrhosis", to: "hcc", label: "progresses_to", cardinality: "1:N", source: "ontology", evidence: "project-defined progression model", labelOffset: [0, -18] },
+  { from: "pnpla3", to: "nafld", label: "associated_with", cardinality: "N:M", source: "DisGeNET", evidence: "curated_database", labelOffset: [-18, 8] },
+  { from: "tnf", to: "nash", label: "associated_with", cardinality: "N:M", source: "DisGeNET", evidence: "curated_database", labelOffset: [18, 8] },
+  { from: "tnf", to: "tnfp", label: "encodes", cardinality: "1:N", source: "STRING", evidence: "curated_database", labelOffset: [-25, -22] },
+  { from: "tnfp", to: "nfkb", label: "involved_in", cardinality: "N:M", source: "KEGG", evidence: "curated_database", labelOffset: [0, -20] },
+  { from: "nfkb", to: "reactomeHierarchy", label: "subpathway_of", cardinality: "N:M", source: "Reactome", evidence: "curated_database", labelOffset: [8, -18] },
+  { from: "nfkb", to: "nash", label: "associated_with_pathogenesis", cardinality: "N:M", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [16, -20] },
+  { from: "bile", to: "cirrhosis", label: "associated_with_metabolic_change", cardinality: "N:M", source: "HMDB", evidence: "literature_supported", labelOffset: [-35, 36] },
+  { from: "tnfp", to: "liver", label: "expressed_in_tissue", cardinality: "N:M", source: "HPA", evidence: "curated_database", labelOffset: [-18, 16] },
+  { from: "kupffer", to: "liver", label: "located_in", cardinality: "N:1", source: "HPA", evidence: "curated_database", labelOffset: [0, 18] },
+  { from: "kupffer", to: "nash", label: "involved_in_disease", cardinality: "N:M", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [62, -46] },
+  { from: "candidate", to: "fibrosis", label: "associated_with_pathogenesis", cardinality: "N:M", source: "PubMed/LLM", evidence: "llm_extracted_candidate", labelOffset: [-6, 24] },
 ];
 
 const stages = [
@@ -323,6 +323,15 @@ function nearestVisibleNode(point) {
   });
 }
 
+function nearestVisibleEdge(point) {
+  const { visibleEdges } = visibleGraphData();
+  return visibleEdges.find((edge) => {
+    const labelPoint = midpoint(edge);
+    const width = Math.max(70, edgeDisplayLabel(edge).length * 6.2);
+    return Math.abs(point.x - labelPoint.x) <= width / 2 && Math.abs(point.y - (labelPoint.y - 12)) <= 16;
+  });
+}
+
 function startPan(event) {
   if (!panState || panState.pointerId !== event.pointerId || panState.active) return;
   clearSelection();
@@ -380,6 +389,23 @@ function showNodeDetails(node) {
   ]);
 }
 
+function showEdgeDetails(edge, index) {
+  const a = nodeById(edge.from);
+  const b = nodeById(edge.to);
+  setDetails(edge.label, `${edge.source} validates this relationship against the shared YAML schema as ${edgeDisplayLabel(edge)}.`, [
+    ["Source", edge.source],
+    ["Evidence", edge.evidence],
+    ["Cardinality", edge.cardinality || "not specified"],
+    ["From entity", `${a.label} (${a.type})`],
+    ["To entity", `${b.label} (${b.type})`],
+  ]);
+  renderGraph(`edge-${index}`);
+}
+
+function edgeDisplayLabel(edge) {
+  return edge.cardinality ? `${edge.label} [${edge.cardinality}]` : edge.label;
+}
+
 function renderLegend() {
   const legend = document.getElementById("legend");
   legend.innerHTML = Object.entries(classes)
@@ -424,17 +450,11 @@ function renderGraph(activeId = null) {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     const isActive = activeId === edge.from || activeId === edge.to || activeId === `edge-${index}`;
     path.setAttribute("d", edgePath(edge));
-    path.setAttribute("class", `edge ${activeId && !isActive ? "dim" : ""} ${isActive ? "active" : ""}`);
+    path.setAttribute("class", `edge ${edge.cardinality === "N:M" ? "many-to-many" : ""} ${activeId && !isActive ? "dim" : ""} ${isActive ? "active" : ""}`);
     path.setAttribute("fill", "none");
     path.setAttribute("marker-end", isActive ? "url(#arrowActive)" : "url(#arrow)");
     path.addEventListener("click", () => {
-      setDetails(edge.label, `${edge.source} validates this relationship against the shared YAML schema as ${edge.label}.`, [
-        ["Source", edge.source],
-        ["Evidence", edge.evidence],
-        ["From", a.label],
-        ["To", b.label],
-      ]);
-      renderGraph(`edge-${index}`);
+      showEdgeDetails(edge, index);
     });
     svg.appendChild(path);
 
@@ -442,7 +462,7 @@ function renderGraph(activeId = null) {
     label.setAttribute("x", labelPoint.x);
     label.setAttribute("y", labelPoint.y - 12);
     label.setAttribute("class", `edge-label ${activeId && !isActive ? "dim" : ""}`);
-    label.textContent = edge.label;
+    label.textContent = edgeDisplayLabel(edge);
     svg.appendChild(label);
     renderedEdges.push({ edge, path, label });
   });
@@ -577,10 +597,17 @@ svg.addEventListener("pointerup", (event) => {
 svg.addEventListener("click", (event) => {
   if (dragState || panState?.active) return;
   const hitNode = nearestVisibleNode(svgPoint(event));
-  if (!hitNode) return;
-  if (hitNode.wasDragged) return;
-  showNodeDetails(hitNode);
-  renderGraph(hitNode.id);
+  if (hitNode) {
+    if (hitNode.wasDragged) return;
+    showNodeDetails(hitNode);
+    renderGraph(hitNode.id);
+    return;
+  }
+  const hitEdge = nearestVisibleEdge(svgPoint(event));
+  if (hitEdge) {
+    const { visibleEdges } = visibleGraphData();
+    showEdgeDetails(hitEdge, visibleEdges.indexOf(hitEdge));
+  }
 });
 
 svg.addEventListener("pointercancel", () => {
