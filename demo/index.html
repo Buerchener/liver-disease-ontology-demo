@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Liver Disease Ontology Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">FYP Ontology Demo</p>
+        <h1>Liver Disease Ontology Validation Demo</h1>
+      </div>
+      <div class="route">
+        <span>Ontology</span>
+        <span>Schema Evolution</span>
+        <span>Source Mapping</span>
+        <span>YAML Validation</span>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="summary-band" aria-label="Project route">
+        <div class="route-step active">
+          <span class="step-index">1</span>
+          <div>
+            <strong>Validate entities</strong>
+            <small>Independent ID, searchable record, attributes</small>
+          </div>
+        </div>
+        <div class="route-step">
+          <span class="step-index">2</span>
+          <div>
+            <strong>Validate relations</strong>
+            <small>Typed source/target pairs from each database</small>
+          </div>
+        </div>
+        <div class="route-step">
+          <span class="step-index">3</span>
+          <div>
+            <strong>Validate attributes</strong>
+            <small>Confirmed, recommended, and planned fields</small>
+          </div>
+        </div>
+        <div class="route-step">
+          <span class="step-index">4</span>
+          <div>
+            <strong>Consolidate v1.0</strong>
+            <small>Final YAML controls KG and LLM candidates</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel controls" aria-label="Ontology controls">
+          <div class="panel-head">
+            <p class="eyebrow">Ontology v1.0 Draft</p>
+            <h2>Validate the schema</h2>
+          </div>
+
+          <div class="control-group">
+            <label for="sourceFilter">Source layer</label>
+            <select id="sourceFilter">
+              <option value="all">All sources</option>
+              <option value="ontology">Ontology backbone</option>
+              <option value="DisGeNET">DisGeNET</option>
+              <option value="STRING">STRING</option>
+              <option value="KEGG">KEGG</option>
+              <option value="HMDB">HMDB</option>
+              <option value="Reactome">Reactome</option>
+              <option value="HPA">Human Protein Atlas</option>
+              <option value="PubMed/LLM">PubMed / LLM</option>
+            </select>
+          </div>
+
+          <label class="toggle-row" for="exampleToggle">
+            <input id="exampleToggle" type="checkbox" />
+            <span>Open example</span>
+          </label>
+
+          <div class="control-group">
+            <span class="label">Entity classes</span>
+            <div class="legend" id="legend"></div>
+          </div>
+
+          <div class="metrics">
+            <div>
+              <strong id="nodeCount">0</strong>
+              <span>visible nodes</span>
+            </div>
+            <div>
+              <strong id="edgeCount">0</strong>
+              <span>visible relations</span>
+            </div>
+          </div>
+
+          <div class="source-list">
+            <h3>Schema evolution</h3>
+            <button data-source="DisGeNET">v0.1 DisGeNET -> Gene-Disease</button>
+            <button data-source="STRING">v0.2 STRING -> Protein-Protein</button>
+            <button data-source="KEGG">v0.3 KEGG -> Pathway</button>
+            <button data-source="HMDB">v0.4 HMDB -> Metabolite</button>
+            <button data-source="Reactome">v0.5 Reactome -> Pathway hierarchy</button>
+            <button data-source="HPA">v0.6 HPA -> Tissue/Cell type</button>
+            <button data-source="PubMed/LLM">v0.7 PubMed/LLM -> Candidate triples</button>
+          </div>
+        </aside>
+
+        <section class="graph-stage" aria-label="Interactive graph demo">
+          <div class="graph-toolbar">
+            <div>
+              <p class="eyebrow">Interactive validation graph</p>
+              <h2 id="graphTitle">YAML schema validation graph</h2>
+            </div>
+            <button id="resetView" type="button">Reset</button>
+          </div>
+          <svg id="graph" viewBox="0 0 980 620" role="img" aria-label="Sample liver disease knowledge graph"></svg>
+        </section>
+
+        <aside class="panel details" aria-label="Selected item details">
+          <div class="panel-head">
+            <p class="eyebrow">Selected item</p>
+            <h2 id="detailTitle">Ontology backbone</h2>
+          </div>
+          <p id="detailText">
+            Select a node or relation to inspect how the ontology stores entity type,
+            source, evidence level, and whether the relation name matches the YAML schema.
+          </p>
+
+          <dl class="detail-grid" id="detailGrid">
+            <div>
+              <dt>Route</dt>
+              <dd>v0.1 -> v0.7 -> v1.0 YAML</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>Validation demo</dd>
+            </div>
+          </dl>
+
+          <div class="evidence-box">
+            <h3>Evidence rule</h3>
+            <p>
+              A relation is valid only when its name, source type, target type,
+              evidence level, and provenance fields match the YAML schema.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">Disease progression model</p>
+            <h2>Stage-aware backbone</h2>
+          </div>
+          <div class="timeline" id="timeline"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">Demo message</p>
+            <h2>What this validates</h2>
+          </div>
+          <ul class="checklist">
+            <li>The final YAML is built from incremental database validation, not from arbitrary labels.</li>
+            <li>Each relation must match a legal source entity, target entity, and relation name.</li>
+            <li>Confirmed attributes are separated from recommended and planned attributes.</li>
+            <li>PubMed/LLM triples are allowed only as candidate knowledge under the schema.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

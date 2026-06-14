@@ -1,0 +1,644 @@
+ontology:
+  name: Liver Disease Progression Ontology
+  version: 1.0-draft
+  description: >
+    An ontology-first schema for constructing a stage-aware biomedical
+    knowledge graph of liver disease progression. The ontology defines
+    core biomedical entity types, typed relationships, evidence/provenance
+    requirements, disease-stage constraints, and source-to-ontology mapping
+    rules for database integration and LLM-assisted graph enrichment.
+  scope:
+    disease_area: liver disease progression
+    primary_use_cases:
+      - multi-source biomedical data integration
+      - stage-aware knowledge graph construction
+      - literature-derived knowledge extraction
+      - evidence tracking and candidate knowledge validation
+      - graph representation learning and link prediction
+  design_principles:
+    - Define ontology classes and relations before importing database records.
+    - Map each external database into the same ontology rather than creating one graph per source.
+    - Keep curated database facts separate from LLM-extracted candidate knowledge.
+    - Preserve source, evidence, identifier, and extraction provenance for every relationship.
+    - Support downstream Neo4j querying, visualization, and graph learning.
+
+identifier_policy:
+  primary_id_rule: >
+    Each entity should have one canonical project-level ID and may keep multiple
+    external IDs from source databases.
+  recommended_fields:
+    - project_id
+    - primary_external_id
+    - external_ids
+    - synonyms
+    - source
+    - source_record_id
+  notes:
+    - Gene identifiers should preferably be normalized to NCBI Gene or HGNC where possible.
+    - Protein identifiers should preferably be normalized to UniProt where possible.
+    - Disease identifiers should preferably keep UMLS, MeSH, OMIM, and source-specific IDs where available.
+    - Pathway identifiers should retain KEGG and Reactome stable IDs separately.
+    - Metabolite identifiers should retain HMDB, KEGG Compound, PubChem, InChIKey, and synonyms where available.
+
+disease_progression_model:
+  class_strategy: >
+    Disease stages are represented as Disease entities with stage-specific
+    attributes. A future extension may introduce DiseaseStage as a subclass
+    if more clinical staging granularity is needed.
+  canonical_stages:
+    - stage_id: LD_STAGE_00
+      name: Healthy liver
+      order: 0
+      disease_name: Healthy liver
+      is_progression_stage: true
+    - stage_id: LD_STAGE_01
+      name: NAFLD
+      order: 1
+      disease_name: Non-alcoholic fatty liver disease
+      is_progression_stage: true
+    - stage_id: LD_STAGE_02
+      name: NASH
+      order: 2
+      disease_name: Non-alcoholic steatohepatitis
+      is_progression_stage: true
+    - stage_id: LD_STAGE_03
+      name: Fibrosis
+      order: 3
+      disease_name: Liver fibrosis
+      is_progression_stage: true
+    - stage_id: LD_STAGE_04
+      name: Cirrhosis
+      order: 4
+      disease_name: Liver cirrhosis
+      is_progression_stage: true
+    - stage_id: LD_STAGE_05
+      name: HCC
+      order: 5
+      disease_name: Hepatocellular carcinoma
+      is_progression_stage: true
+  canonical_progression_edges:
+    - source: Healthy liver
+      target: NAFLD
+      relation: progresses_to
+    - source: NAFLD
+      target: NASH
+      relation: progresses_to
+    - source: NASH
+      target: Fibrosis
+      relation: progresses_to
+    - source: Fibrosis
+      target: Cirrhosis
+      relation: progresses_to
+    - source: Cirrhosis
+      target: HCC
+      relation: progresses_to
+
+evidence_policy:
+  evidence_levels:
+    curated_database: Relationship imported from a curated or semi-curated biomedical database.
+    literature_supported: Relationship supported by publication evidence.
+    llm_extracted_candidate: Candidate relationship extracted from text by an LLM and requiring validation.
+    predicted_candidate: Candidate relationship predicted by graph learning and requiring validation.
+    manually_validated: Relationship checked by project members against source evidence.
+  required_relation_provenance:
+    - source
+    - evidence_level
+    - date
+  recommended_relation_provenance:
+    - publication_id
+    - evidence_text
+    - source_record_id
+    - extraction_method
+    - confidence_score
+    - validation_status
+    - validated_by
+    - notes
+  validation_status_values:
+    - imported
+    - candidate
+    - reviewed
+    - accepted
+    - rejected
+
+entities:
+  Gene:
+    description: Gene or gene locus relevant to liver disease biology.
+    primary_id_candidates:
+      - NCBI Gene ID
+      - HGNC ID
+    attributes:
+      confirmed:
+        - gene_id
+        - gene_symbol
+        - gene_name
+      recommended:
+        - project_id
+        - primary_external_id
+        - external_ids
+        - synonyms
+        - source
+      planned:
+        - chromosome_location
+        - gene_type
+        - organism
+
+  Disease:
+    description: Disease, phenotype, pathological condition, or canonical liver disease progression stage.
+    primary_id_candidates:
+      - UMLS CUI
+      - MeSH ID
+      - OMIM ID
+      - project stage ID
+    attributes:
+      confirmed:
+        - disease_id
+        - disease_name
+        - umls_id
+      recommended:
+        - project_id
+        - mesh_id
+        - omim_id
+        - synonyms
+        - is_progression_stage
+        - stage_order
+      planned:
+        - disease_type
+        - clinical_stage_definition
+        - description
+
+  Protein:
+    description: Protein product, preferably normalized to UniProt where possible.
+    primary_id_candidates:
+      - UniProt accession
+      - STRING protein ID
+    attributes:
+      confirmed:
+        - protein_id
+        - protein_symbol
+        - protein_name
+        - organism
+      recommended:
+        - project_id
+        - primary_external_id
+        - external_ids
+        - synonyms
+      planned:
+        - taxonomy_id
+        - encoded_by_gene_id
+
+  Pathway:
+    description: Biological pathway, metabolic pathway, or pathway hierarchy term.
+    primary_id_candidates:
+      - KEGG pathway ID
+      - Reactome stable ID
+    attributes:
+      confirmed:
+        - pathway_id
+        - pathway_name
+        - pathway_category
+        - pathway_source
+        - source
+      recommended:
+        - project_id
+        - external_ids
+        - synonyms
+      planned:
+        - pathway_description
+
+  Metabolite:
+    description: Metabolite or chemical compound associated with liver disease metabolism.
+    primary_id_candidates:
+      - HMDB ID
+      - KEGG Compound ID
+      - PubChem CID
+      - InChIKey
+    attributes:
+      confirmed:
+        - metabolite_id
+        - metabolite_name
+        - chemical_formula
+        - molecular_weight
+        - source
+      recommended:
+        - project_id
+        - external_ids
+        - synonyms
+      planned:
+        - smiles
+        - inchikey
+        - metabolite_class
+        - description
+
+  Tissue:
+    description: Tissue or anatomical context used for expression and pathology evidence.
+    primary_id_candidates:
+      - HPA tissue name
+      - Uberon ID
+    attributes:
+      confirmed:
+        - tissue_id
+        - tissue_name
+        - organ_system
+        - source
+      recommended:
+        - project_id
+        - external_ids
+        - synonyms
+      planned:
+        - description
+
+  CellType:
+    description: Cell type relevant to liver tissue context, expression, inflammation, fibrosis, or tumor microenvironment.
+    primary_id_candidates:
+      - HPA cell type name
+      - Cell Ontology ID
+    attributes:
+      confirmed:
+        - cell_type_id
+        - cell_type_name
+        - source
+      recommended:
+        - project_id
+        - external_ids
+        - synonyms
+      planned:
+        - tissue_context
+        - description
+
+relations:
+  associated_with:
+    source: Gene
+    target: Disease
+    direction: directed
+    symmetric: false
+    description: Gene-disease association mainly derived from DisGeNET or literature.
+    allowed_sources:
+      - DisGeNET
+      - PubMed
+      - LLM extraction
+      - graph learning prediction
+    attributes:
+      confirmed:
+        - association_type
+        - score
+        - evidence_level
+        - source
+        - publication_id
+        - evidence_text
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+        - extraction_method
+        - confidence_score
+      planned:
+        - notes
+
+  progresses_to:
+    source: Disease
+    target: Disease
+    direction: directed
+    symmetric: false
+    description: Disease progression relationship among canonical liver disease stages.
+    allowed_sources:
+      - project-defined progression model
+      - clinical guideline
+      - PubMed
+    attributes:
+      confirmed:
+        - relationship_type
+        - evidence_level
+        - source
+        - publication_id
+        - evidence_text
+        - date
+      recommended:
+        - stage_order_delta
+        - validation_status
+      planned:
+        - notes
+
+  encodes:
+    source: Gene
+    target: Protein
+    direction: directed
+    symmetric: false
+    description: Gene encodes protein relationship.
+    allowed_sources:
+      - UniProt
+      - NCBI Gene
+      - HGNC
+    attributes:
+      confirmed:
+        - source
+        - evidence_level
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  interacts_with:
+    source: Protein
+    target: Protein
+    direction: undirected
+    symmetric: true
+    description: Protein-protein interaction mainly derived from STRING.
+    allowed_sources:
+      - STRING
+      - PubMed
+      - LLM extraction
+      - graph learning prediction
+    attributes:
+      confirmed:
+        - combined_score
+        - experimental_score
+        - database_score
+        - textmining_score
+        - coexpression_score
+        - source
+        - date
+      recommended:
+        - evidence_level
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  participates_in:
+    source: Gene
+    target: Pathway
+    direction: directed
+    symmetric: false
+    description: Gene participates in a biological pathway.
+    allowed_sources:
+      - KEGG
+      - Reactome
+      - PubMed
+      - LLM extraction
+    attributes:
+      confirmed:
+        - role
+        - source
+        - evidence_level
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  involved_in:
+    source: Protein
+    target: Pathway
+    direction: directed
+    symmetric: false
+    description: Protein is involved in a biological pathway.
+    allowed_sources:
+      - KEGG
+      - Reactome
+      - UniProt
+      - PubMed
+      - LLM extraction
+    attributes:
+      confirmed:
+        - role
+        - source
+        - evidence_level
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  associated_with_pathogenesis:
+    source: Pathway
+    target: Disease
+    direction: directed
+    symmetric: false
+    description: Pathway associated with disease pathogenesis or progression.
+    allowed_sources:
+      - PubMed
+      - KEGG
+      - Reactome
+      - LLM extraction
+      - graph learning prediction
+    attributes:
+      confirmed:
+        - evidence_level
+        - source
+        - publication_id
+        - evidence_text
+        - date
+      recommended:
+        - mechanism_description
+        - validation_status
+        - extraction_method
+        - confidence_score
+      planned:
+        - notes
+
+  involved_in_pathway:
+    source: Metabolite
+    target: Pathway
+    direction: directed
+    symmetric: false
+    description: Metabolite involved in biological or metabolic pathways.
+    allowed_sources:
+      - HMDB
+      - KEGG
+      - Reactome
+      - PubMed
+      - LLM extraction
+    attributes:
+      confirmed:
+        - role
+        - source
+        - evidence_level
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  associated_with_metabolic_change:
+    source: Metabolite
+    target: Disease
+    direction: directed
+    symmetric: false
+    description: Metabolite associated with disease-related metabolic changes.
+    allowed_sources:
+      - HMDB
+      - PubMed
+      - LLM extraction
+      - graph learning prediction
+    attributes:
+      confirmed:
+        - change_direction
+        - evidence_level
+        - source
+        - publication_id
+        - evidence_text
+        - date
+      recommended:
+        - sample_type
+        - concentration
+        - validation_status
+        - extraction_method
+        - confidence_score
+      planned:
+        - notes
+
+  subpathway_of:
+    source: Pathway
+    target: Pathway
+    direction: directed
+    symmetric: false
+    description: Hierarchical relationship between pathways or subpathways.
+    allowed_sources:
+      - Reactome
+      - KEGG
+    attributes:
+      confirmed:
+        - source
+        - evidence_level
+        - date
+      recommended:
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  expressed_in_tissue:
+    source: Protein
+    target: Tissue
+    direction: directed
+    symmetric: false
+    description: Protein expression in a specific tissue.
+    allowed_sources:
+      - Human Protein Atlas
+    attributes:
+      confirmed:
+        - expression_level
+        - source
+        - date
+      recommended:
+        - expression_score
+        - evidence_level
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  expressed_in_celltype:
+    source: Protein
+    target: CellType
+    direction: directed
+    symmetric: false
+    description: Protein expression in a specific cell type.
+    allowed_sources:
+      - Human Protein Atlas
+    attributes:
+      confirmed:
+        - expression_level
+        - source
+        - date
+      recommended:
+        - expression_score
+        - evidence_level
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  located_in:
+    source: CellType
+    target: Tissue
+    direction: directed
+    symmetric: false
+    description: Cell type located in or associated with a specific tissue.
+    allowed_sources:
+      - Human Protein Atlas
+      - Cell Ontology
+      - Uberon
+    attributes:
+      confirmed:
+        - source
+        - evidence_level
+      recommended:
+        - date
+        - source_record_id
+        - validation_status
+      planned:
+        - notes
+
+  involved_in_disease:
+    source: CellType
+    target: Disease
+    direction: directed
+    symmetric: false
+    description: Cell type involved in disease occurrence, progression, or pathological change.
+    allowed_sources:
+      - PubMed
+      - Human Protein Atlas
+      - LLM extraction
+    attributes:
+      confirmed:
+        - role
+        - source
+        - evidence_level
+        - publication_id
+        - evidence_text
+        - date
+      recommended:
+        - validation_status
+        - extraction_method
+        - confidence_score
+      planned:
+        - notes
+
+llm_extraction_policy:
+  extracted_triple_fields:
+    - subject_text
+    - subject_entity_type
+    - relation_type
+    - object_text
+    - object_entity_type
+    - evidence_text
+    - publication_id
+    - extraction_method
+    - confidence_score
+    - normalization_status
+    - validation_status
+  allowed_relation_targets:
+    - associated_with
+    - associated_with_pathogenesis
+    - associated_with_metabolic_change
+    - involved_in_disease
+    - interacts_with
+    - participates_in
+    - involved_in
+  rule: >
+    LLM-extracted triples should be inserted as candidate relationships until
+    entity normalization and evidence review are completed.
+
+graph_learning_policy:
+  candidate_prediction_fields:
+    - model_name
+    - model_version
+    - prediction_score
+    - rank
+    - training_graph_version
+    - validation_status
+  allowed_prediction_tasks:
+    - Gene-Disease association prediction
+    - Protein-Protein interaction candidate ranking
+    - Metabolite-Disease association prediction
+    - Pathway-Disease association prediction
+  rule: >
+    Graph learning outputs are predicted candidates, not validated biomedical
+    facts. They should be stored separately or marked with evidence_level:
+    predicted_candidate.
