@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liver Disease Ontology Demo</title>
-    <link rel="stylesheet" href="styles.css?v=schema-relations-20260615" />
+    <link rel="stylesheet" href="styles.css?v=relation-list-20260615" />
   </head>
   <body>
     <header class="topbar">
@@ -150,6 +150,129 @@
         </aside>
       </section>
 
+      <section class="panel relation-guide" aria-label="关系清单">
+        <div class="panel-head">
+          <p class="eyebrow">Relation guide</p>
+          <h2>关系清单</h2>
+        </div>
+        <p class="relation-intro">
+          这里的 1:N / N:M / N:1 是数据建模关系基数，不是说每个实体都必须有这个关系。
+        </p>
+        <div class="relation-table-wrap">
+          <table class="relation-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Relation</th>
+                <th>实体关系</th>
+                <th>Cardinality</th>
+                <th>解释 / 人工核查点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><code>progresses_to</code></td>
+                <td><code>Disease</code> 和 <code>Disease</code></td>
+                <td><code>1:N</code></td>
+                <td>一个疾病阶段可以进展到一个或多个后续阶段，例如 NAFLD -> NASH。但不是所有 Disease 都必须有后续阶段，比如 HCC 可能是终点。</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><code>associated_with</code></td>
+                <td><code>Gene</code> 和 <code>Disease</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 gene 可关联多个 disease，一个 disease 也可关联多个 gene。不是所有 gene 都一定和 liver disease 有证据关联。</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><code>encodes</code></td>
+                <td><code>Gene</code> 和 <code>Protein</code></td>
+                <td><code>1:N</code></td>
+                <td>一个 gene 可编码一个或多个 protein isoform/product。不是所有 gene 记录都一定能在当前数据源中映射到 protein。</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><code>interacts_with</code></td>
+                <td><code>Protein</code> 和 <code>Protein</code></td>
+                <td><code>N:M</code></td>
+                <td>蛋白互作通常是多对多，并且语义上接近无向/对称。不是所有 protein 都有 STRING/PubMed 支持的互作边。</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><code>participates_in</code></td>
+                <td><code>Gene</code> 和 <code>Pathway</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 gene 可参与多个 pathway，一个 pathway 也包含多个 gene。不是所有 gene 都有 KEGG/Reactome pathway 注释。</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td><code>involved_in</code></td>
+                <td><code>Protein</code> 和 <code>Pathway</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 protein 可参与多个 pathway，一个 pathway 也包含多个 protein。不是所有 protein 都能被 pathway 数据库覆盖。</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td><code>associated_with_pathogenesis</code></td>
+                <td><code>Pathway</code> 和 <code>Disease</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 pathway 可参与多个 disease 的 pathogenesis，一个 disease 也可涉及多个 pathway。不是所有 pathway 都和 liver disease pathogenesis 直接相关。</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td><code>involved_in_pathway</code></td>
+                <td><code>Metabolite</code> 和 <code>Pathway</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 metabolite 可参与多个 metabolic pathway，一个 pathway 也包含多个 metabolite。不是所有 metabolite 都有明确 pathway 映射。</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td><code>associated_with_metabolic_change</code></td>
+                <td><code>Metabolite</code> 和 <code>Disease</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 metabolite 可和多个 disease metabolic changes 相关，一个 disease 也可能涉及多个 metabolite 变化。不是所有 metabolite 都有疾病差异证据。</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td><code>subpathway_of</code></td>
+                <td><code>Pathway</code> 和 <code>Pathway</code></td>
+                <td><code>N:M</code></td>
+                <td>子 pathway 与上级 pathway 的层级关系。这里 N:M 需要重点核查：严格 ontology 层级可能更像 N:1 或 DAG 多父节点结构，而不是任意多对多。</td>
+              </tr>
+              <tr>
+                <td>11</td>
+                <td><code>expressed_in_tissue</code></td>
+                <td><code>Protein</code> 和 <code>Tissue</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 protein 可在多个 tissue 表达，一个 tissue 也有多个 protein 表达。不是所有 protein 都在 liver/tissue 数据里有表达证据。</td>
+              </tr>
+              <tr>
+                <td>12</td>
+                <td><code>expressed_in_celltype</code></td>
+                <td><code>Protein</code> 和 <code>CellType</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 protein 可在多个 cell type 表达，一个 cell type 也表达多个 protein。不是所有 protein 都有 cell-type-level expression 数据。</td>
+              </tr>
+              <tr>
+                <td>13</td>
+                <td><code>located_in</code></td>
+                <td><code>CellType</code> 和 <code>Tissue</code></td>
+                <td><code>N:1</code></td>
+                <td>当前设定是多个 cell type 属于/位于一个 tissue。这个需要核查：同一种 cell type 可能出现在多个 tissue 中，所以可能应改成 N:M，除非这里的 CellType 实体是“tissue-specific cell type”。</td>
+              </tr>
+              <tr>
+                <td>14</td>
+                <td><code>involved_in_disease</code></td>
+                <td><code>CellType</code> 和 <code>Disease</code></td>
+                <td><code>N:M</code></td>
+                <td>一个 cell type 可参与多个 disease，一个 disease 也涉及多个 cell type。不是所有 cell type 都与 liver disease/pathology 有证据关系。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="lower-grid">
         <div class="panel">
           <div class="panel-head">
@@ -174,6 +297,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=schema-relations-20260615"></script>
+    <script src="app.js?v=relation-list-20260615"></script>
   </body>
 </html>

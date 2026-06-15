@@ -450,6 +450,70 @@ dd {
   color: #5c4a2d;
 }
 
+.relation-guide {
+  margin-top: 16px;
+}
+
+.relation-intro {
+  margin: -8px 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.relation-table-wrap {
+  overflow-x: auto;
+}
+
+.relation-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.relation-table th,
+.relation-table td {
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.relation-table th {
+  background: #f1f5ee;
+  color: #40524a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.relation-table td:first-child,
+.relation-table th:first-child {
+  width: 46px;
+  text-align: center;
+}
+
+.relation-table td:nth-child(2) {
+  width: 220px;
+}
+
+.relation-table td:nth-child(3) {
+  width: 220px;
+}
+
+.relation-table td:nth-child(4) {
+  width: 120px;
+}
+
+.relation-table code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #eef4ef;
+  color: #244d3a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .lower-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
