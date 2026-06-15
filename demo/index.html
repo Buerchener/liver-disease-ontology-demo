@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liver Disease Ontology Demo</title>
-    <link rel="stylesheet" href="styles.css?v=1aab360" />
+    <link rel="stylesheet" href="styles.css?v=schema-relations-20260615" />
   </head>
   <body>
     <header class="topbar">
@@ -97,7 +97,8 @@
 
           <div class="source-list">
             <h3>Schema evolution</h3>
-            <button data-source="DisGeNET">v0.1 DisGeNET -> Gene-Disease</button>
+            <button data-source="ontology">Backbone -> Disease-Disease</button>
+            <button data-source="DisGeNET">v0.1 DisGeNET -> Gene-Disease + backbone</button>
             <button data-source="STRING">v0.2 STRING -> Protein-Protein</button>
             <button data-source="KEGG">v0.3 KEGG -> Pathway</button>
             <button data-source="HMDB">v0.4 HMDB -> Metabolite</button>
@@ -173,6 +174,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=1aab360"></script>
+    <script src="app.js?v=schema-relations-20260615"></script>
   </body>
 </html>

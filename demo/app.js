@@ -172,6 +172,11 @@ function isVisibleBySource(item, selected) {
   return selected === "all" || item.source === selected;
 }
 
+function isVisibleEdgeBySource(edge, selected) {
+  if (isVisibleBySource(edge, selected)) return true;
+  return selected === "DisGeNET" && edge.source === "ontology";
+}
+
 function nodeRadius(node) {
   return node.type === "Disease" ? 31 : 28;
 }
@@ -333,7 +338,7 @@ function zoomAt(point, scale) {
 
 function visibleGraphData() {
   const selectedSource = sourceFilter.value;
-  const visibleEdges = edges.filter((edge) => isVisibleBySource(edge, selectedSource));
+  const visibleEdges = edges.filter((edge) => isVisibleEdgeBySource(edge, selectedSource));
   const connectedIds = new Set(visibleEdges.flatMap((edge) => [edge.from, edge.to]));
   const visibleNodes = selectedSource === "all"
     ? nodes
@@ -675,7 +680,10 @@ svg.addEventListener("gestureend", () => {
 document.querySelectorAll("[data-source]").forEach((button) => {
   button.addEventListener("click", () => {
     sourceFilter.value = button.dataset.source;
-    setDetails(button.dataset.source, `This layer shows how ${button.dataset.source} records validate or extend the shared ontology.`, [
+    const contextNote = button.dataset.source === "DisGeNET"
+      ? " It also keeps the project-defined Disease-Disease progression backbone visible because v0.1 validates both Disease nodes and Gene-Disease links."
+      : "";
+    setDetails(button.dataset.source, `This layer shows how ${button.dataset.source} records validate or extend the shared ontology.${contextNote}`, [
       ["Mode", "Schema validation"],
       ["Graph status", "YAML consistency demo"],
     ]);
