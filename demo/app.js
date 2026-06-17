@@ -119,6 +119,99 @@ const stages = [
   ["HCC", "Order 5"],
 ];
 
+const sourceFocus = {
+  all: {
+    title: "All source layers",
+    text: "This view combines every schema evolution layer into the draft liver disease ontology.",
+    rows: [
+      ["Focus entity pairs", "Disease-Disease, Gene-Disease, Protein-Protein, Gene/Protein-Pathway, Metabolite-Pathway/Disease, Protein-Tissue/CellType, CellType-Tissue/Disease"],
+      ["Validated relations", "All YAML-defined relation types in this demo"],
+      ["Data role", "Integrated ontology overview"],
+      ["Import status", "Schema-level validation view"],
+    ],
+  },
+  ontology: {
+    title: "Ontology backbone",
+    text: "This layer defines the disease progression backbone before external database records are attached.",
+    rows: [
+      ["Focus entity pair", "Disease <-> Disease"],
+      ["Validated relation", "progresses_to [1:N]"],
+      ["Data role", "Project-defined liver disease progression model"],
+      ["Import status", "Backbone schema"],
+    ],
+  },
+  DisGeNET: {
+    title: "DisGeNET",
+    text: "This layer focuses on gene-disease associations. The Disease-Disease backbone is kept visible as context for v0.1.",
+    rows: [
+      ["Focus entity pair", "Gene <-> Disease"],
+      ["Validated relation", "associated_with [N:M]"],
+      ["Context relation", "Disease <-> Disease progresses_to [1:N]"],
+      ["Data role", "Gene-disease association evidence"],
+    ],
+  },
+  STRING: {
+    title: "STRING",
+    text: "This layer focuses on protein-protein interaction evidence and gene-to-protein mapping needed before protein-level graph expansion.",
+    rows: [
+      ["Focus entity pairs", "Protein <-> Protein; Gene <-> Protein"],
+      ["Validated relations", "interacts_with [N:M]; encodes [1:N]"],
+      ["Data role", "Protein interaction network and gene-protein bridge"],
+      ["Import status", "Curated database import"],
+    ],
+  },
+  KEGG: {
+    title: "KEGG",
+    text: "This layer introduces pathway-level interpretation by connecting genes and proteins to biological pathways.",
+    rows: [
+      ["Focus entity pairs", "Gene <-> Pathway; Protein <-> Pathway"],
+      ["Validated relations", "participates_in [N:M]; involved_in [N:M]"],
+      ["Data role", "Pathway membership and biological process context"],
+      ["Import status", "Curated database import"],
+    ],
+  },
+  HMDB: {
+    title: "HMDB",
+    text: "This layer adds metabolite evidence and links metabolic changes to pathways or disease states.",
+    rows: [
+      ["Focus entity pairs", "Metabolite <-> Pathway; Metabolite <-> Disease"],
+      ["Validated relations", "involved_in_pathway [N:M]; associated_with_metabolic_change [N:M]"],
+      ["Data role", "Metabolomics layer"],
+      ["Import status", "Curated and literature-supported evidence"],
+    ],
+  },
+  Reactome: {
+    title: "Reactome",
+    text: "This layer expands the pathway structure by adding pathway hierarchy and subpathway evidence.",
+    rows: [
+      ["Focus entity pair", "Pathway <-> Pathway"],
+      ["Validated relation", "subpathway_of [N:M]"],
+      ["Data role", "Pathway hierarchy expansion"],
+      ["Import status", "Curated database import"],
+    ],
+  },
+  HPA: {
+    title: "Human Protein Atlas",
+    text: "This layer adds tissue and cell-type context for protein expression and liver-specific interpretation.",
+    rows: [
+      ["Focus entity pairs", "Protein <-> Tissue; Protein <-> CellType; CellType <-> Tissue"],
+      ["Validated relations", "expressed_in_tissue [N:M]; expressed_in_celltype [N:M]; located_in [N:1]"],
+      ["Data role", "Tissue and cell-type context"],
+      ["Import status", "Curated expression evidence"],
+    ],
+  },
+  "PubMed/LLM": {
+    title: "PubMed / LLM",
+    text: "This layer is reserved for candidate triples extracted from literature and then checked against the YAML schema.",
+    rows: [
+      ["Focus entity pairs", "Pathway <-> Disease; CellType <-> Disease"],
+      ["Validated relations", "associated_with_pathogenesis [N:M]; involved_in_disease [N:M]"],
+      ["Data role", "Literature-derived candidate knowledge"],
+      ["Import status", "Candidate until reviewed"],
+    ],
+  },
+};
+
 let nodes = [];
 let edges = [];
 
@@ -433,6 +526,11 @@ function showEdgeDetails(edge, index) {
   renderGraph(`edge-${index}`);
 }
 
+function showSourceDetails(source) {
+  const focus = sourceFocus[source] || sourceFocus.all;
+  setDetails(focus.title, focus.text, focus.rows);
+}
+
 function edgeDisplayLabel(edge) {
   return edge.cardinality ? `${edge.label} [${edge.cardinality}]` : edge.label;
 }
@@ -680,22 +778,13 @@ svg.addEventListener("gestureend", () => {
 document.querySelectorAll("[data-source]").forEach((button) => {
   button.addEventListener("click", () => {
     sourceFilter.value = button.dataset.source;
-    const contextNote = button.dataset.source === "DisGeNET"
-      ? " It also keeps the project-defined Disease-Disease progression backbone visible because v0.1 validates both Disease nodes and Gene-Disease links."
-      : "";
-    setDetails(button.dataset.source, `This layer shows how ${button.dataset.source} records validate or extend the shared ontology.${contextNote}`, [
-      ["Mode", "Schema validation"],
-      ["Graph status", "YAML consistency demo"],
-    ]);
+    showSourceDetails(button.dataset.source);
     renderGraph();
   });
 });
 
 sourceFilter.addEventListener("change", () => {
-  setDetails("Filtered graph", `Showing the ${sourceFilter.value} layer.`, [
-    ["Filter", sourceFilter.value],
-    ["Purpose", "Inspect source mapping"],
-  ]);
+  showSourceDetails(sourceFilter.value);
   renderGraph();
 });
 
