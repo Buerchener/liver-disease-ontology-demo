@@ -216,8 +216,11 @@ let nodes = [];
 let edges = [];
 
 const svg = document.getElementById("graph");
+const cyContainer = document.getElementById("cyGraph");
 const sourceFilter = document.getElementById("sourceFilter");
 const exampleToggle = document.getElementById("exampleToggle");
+const smokeCard = document.getElementById("smokeCard");
+const smokeSummaryEl = document.getElementById("smokeSummary");
 const detailTitle = document.getElementById("detailTitle");
 const detailText = document.getElementById("detailText");
 const detailGrid = document.getElementById("detailGrid");
@@ -234,6 +237,11 @@ let dragState = null;
 let panState = null;
 let animationFrame = null;
 let gestureScale = 1;
+let viewMode = "schema";
+let cyInstance = null;
+let cyActiveId = null;
+
+const smokeDiseaseOrder = ["NAFLD", "NASH", "Fibrosis", "Cirrhosis", "HCC"];
 
 function cloneGraph(nodesInput, edgesInput) {
   return {
@@ -242,12 +250,24 @@ function cloneGraph(nodesInput, edgesInput) {
   };
 }
 
-function setGraphMode(useExamples) {
-  const graph = useExamples ? cloneGraph(exampleNodes, exampleEdges) : cloneGraph(schemaNodes, schemaEdges);
+function setGraphMode(mode) {
+  viewMode = mode;
+  exampleToggle.checked = mode === "example";
+  const graph = mode === "smoke"
+    ? cloneGraph(smokeNodes, smokeEdges)
+    : mode === "example"
+      ? cloneGraph(exampleNodes, exampleEdges)
+      : cloneGraph(schemaNodes, schemaEdges);
   nodes = graph.nodes;
   edges = graph.edges;
   currentActiveId = null;
   currentViewBox = { ...defaultViewBox };
+  smokeCard.classList.toggle("is-hidden", mode !== "smoke");
+  svg.classList.toggle("is-hidden", mode === "smoke");
+  cyContainer.classList.toggle("is-hidden", mode !== "smoke");
+  document.querySelectorAll("[data-view-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.viewMode === mode);
+  });
 }
 
 function nodeById(id) {
@@ -495,6 +515,10 @@ function setDetails(title, text, rows) {
     .join("");
 }
 
+function dataRows(item) {
+  return Array.isArray(item.dataRows) ? item.dataRows.filter(([, value]) => value !== undefined && value !== null && value !== "") : [];
+}
+
 function attributeRows(entityType) {
   const attributes = entityAttributes[entityType];
   if (!attributes) return [];
@@ -506,24 +530,31 @@ function attributeRows(entityType) {
 }
 
 function showNodeDetails(node) {
-  setDetails(node.label, node.detail, [
+  const rows = [
     ["Entity class", node.type],
     ["Mapped source", node.source],
     ["Ontology role", node.type === "Disease" ? "Progression stage or disease node" : "Biomedical entity node"],
+    ...dataRows(node),
     ...attributeRows(node.type),
-  ]);
+  ];
+  setDetails(node.label, node.detail, rows);
 }
 
 function showEdgeDetails(edge, index) {
   const a = nodeById(edge.from);
   const b = nodeById(edge.to);
-  setDetails(edge.label, `${edge.source} validates this relationship against the shared YAML schema as ${edgeDisplayLabel(edge)}.`, [
+  setDetails(edge.label, edge.detail || `${edge.source} validates this relationship against the shared YAML schema as ${edgeDisplayLabel(edge)}.`, [
     ["Source", edge.source],
     ["Evidence", edge.evidence],
     ["Cardinality", edge.cardinality || "not specified"],
     ["Entity pair", `${a.label} (${a.type}) <-> ${b.label} (${b.type})`],
+    ...dataRows(edge),
   ]);
-  renderGraph(`edge-${index}`);
+  if (viewMode === "smoke") {
+    renderCyGraph(`edge-${index}`);
+  } else {
+    renderGraph(`edge-${index}`);
+  }
 }
 
 function showSourceDetails(source) {
@@ -532,7 +563,281 @@ function showSourceDetails(source) {
 }
 
 function edgeDisplayLabel(edge) {
+  if (viewMode === "smoke" && edge.source === "DisGeNET") {
+    return edge.score ? `${edge.label} score ${edge.score}` : edge.label;
+  }
   return edge.cardinality ? `${edge.label} [${edge.cardinality}]` : edge.label;
+}
+
+function diseaseOrderIndex(label) {
+  const index = smokeDiseaseOrder.indexOf(label);
+  return index === -1 ? smokeDiseaseOrder.length : index;
+}
+
+function smokeLayoutPositions(visibleNodes, visibleEdges) {
+  const width = 980;
+  const diseaseY = 95;
+  const sharedY = 285;
+  const uniqueY = 395;
+  const positions = {};
+  const diseaseNodes = visibleNodes
+    .filter((node) => node.type === "Disease")
+    .sort((a, b) => diseaseOrderIndex(a.label) - diseaseOrderIndex(b.label));
+  const diseaseX = new Map();
+  const diseaseById = new Map(diseaseNodes.map((node) => [node.id, node]));
+  const geneById = new Map(visibleNodes.filter((node) => node.type === "Gene").map((node) => [node.id, node]));
+
+  diseaseNodes.forEach((node, index) => {
+    const x = diseaseNodes.length === 1 ? width / 2 : 105 + index * ((width - 210) / (diseaseNodes.length - 1));
+    diseaseX.set(node.id, x);
+    positions[node.id] = { x, y: diseaseY };
+  });
+
+  const geneLinks = new Map();
+  visibleEdges
+    .filter((edge) => edge.source === "DisGeNET")
+    .forEach((edge) => {
+      const geneId = geneById.has(edge.from) ? edge.from : edge.to;
+      const diseaseId = diseaseById.has(edge.from) ? edge.from : edge.to;
+      if (!geneById.has(geneId) || !diseaseById.has(diseaseId)) return;
+      if (!geneLinks.has(geneId)) geneLinks.set(geneId, []);
+      geneLinks.get(geneId).push({ diseaseId, score: Number(edge.score || 0) });
+    });
+
+  const sharedGenes = [];
+  const uniqueByDisease = new Map(diseaseNodes.map((node) => [node.id, []]));
+
+  geneById.forEach((node, id) => {
+    const links = geneLinks.get(id) || [];
+    const diseaseIds = [...new Set(links.map((link) => link.diseaseId))];
+    if (diseaseIds.length > 1) {
+      sharedGenes.push(node);
+      return;
+    }
+    const primary = diseaseIds[0] || diseaseNodes[0]?.id;
+    if (!uniqueByDisease.has(primary)) uniqueByDisease.set(primary, []);
+    uniqueByDisease.get(primary).push(node);
+  });
+
+  sharedGenes.sort((a, b) => (geneLinks.get(b.id)?.length || 0) - (geneLinks.get(a.id)?.length || 0) || a.label.localeCompare(b.label));
+  const sharedCols = Math.min(8, Math.max(1, sharedGenes.length));
+  sharedGenes.forEach((node, index) => {
+    const col = index % sharedCols;
+    const row = Math.floor(index / sharedCols);
+    const spread = Math.min(600, Math.max(160, sharedCols * 72));
+    positions[node.id] = {
+      x: width / 2 - spread / 2 + (col + 0.5) * (spread / sharedCols),
+      y: sharedY + row * 72,
+    };
+  });
+
+  uniqueByDisease.forEach((group, diseaseId) => {
+    const baseX = diseaseX.get(diseaseId) || width / 2;
+    group.sort((a, b) => a.label.localeCompare(b.label));
+    const cols = group.length > 7 ? 3 : 2;
+    group.forEach((node, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const xOffset = (col - (cols - 1) / 2) * 64;
+      positions[node.id] = {
+        x: Math.max(48, Math.min(width - 48, baseX + xOffset)),
+        y: uniqueY + row * 76,
+      };
+    });
+  });
+
+  return positions;
+}
+
+function cyElements(visibleNodes, visibleEdges, activeId = null) {
+  const positions = smokeLayoutPositions(visibleNodes, visibleEdges);
+  const connected = new Set();
+  if (activeId) {
+    visibleEdges.forEach((edge, index) => {
+      if (activeId === edge.from || activeId === edge.to || activeId === `edge-${index}`) {
+        connected.add(edge.from);
+        connected.add(edge.to);
+        connected.add(`edge-${index}`);
+      }
+    });
+  }
+
+  const nodeElements = visibleNodes.map((node) => ({
+    group: "nodes",
+    classes: `${activeId === node.id ? "active" : ""} ${activeId && activeId !== node.id && !connected.has(node.id) ? "dimmed" : ""}`,
+    data: {
+      id: node.id,
+      label: node.label,
+      type: node.type,
+      source: node.source,
+      color: classes[node.type] || "#6b7280",
+      node,
+    },
+    position: positions[node.id] || { x: node.x, y: node.y },
+  }));
+
+  const edgeElements = visibleEdges.map((edge, index) => ({
+    group: "edges",
+    classes: `${activeId === `edge-${index}` || activeId === edge.from || activeId === edge.to ? "active" : ""} ${activeId && activeId !== `edge-${index}` && activeId !== edge.from && activeId !== edge.to ? "dimmed" : ""}`,
+    data: {
+      id: `edge-${index}`,
+      source: edge.from,
+      target: edge.to,
+      label: edgeDisplayLabel(edge),
+      relation: edge.label,
+      score: edge.score || "",
+      edge,
+      index,
+    },
+  }));
+
+  return [...nodeElements, ...edgeElements];
+}
+
+function renderCyGraph(activeId = null) {
+  cyActiveId = activeId;
+  const selectedSource = sourceFilter.value;
+  const { visibleEdges, visibleNodes } = visibleGraphData();
+
+  nodeCount.textContent = visibleNodes.length;
+  edgeCount.textContent = visibleEdges.length;
+  graphTitle.textContent = "DisGeNET smoke data graph";
+
+  if (typeof cytoscape === "undefined") {
+    setDetails("Graph renderer unavailable", "Cytoscape.js did not load. The smoke data is still available, but the interactive renderer needs network access to the CDN or a local bundled copy.", [
+      ["Expected renderer", "Cytoscape.js"],
+      ["Fallback", "Schema and example SVG views remain available"],
+    ]);
+    return;
+  }
+
+  const elements = cyElements(visibleNodes, visibleEdges, activeId);
+
+  if (!cyInstance) {
+    cyInstance = cytoscape({
+      container: cyContainer,
+      elements,
+      minZoom: 0.35,
+      maxZoom: 3.2,
+      layout: { name: "preset", fit: true, padding: 38 },
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "data(color)",
+            "border-width": 4,
+            "border-color": "#ffffff",
+            "width": 56,
+            "height": 56,
+            "label": "data(label)",
+            "font-size": 13,
+            "font-weight": 800,
+            "color": "#202923",
+            "text-valign": "bottom",
+            "text-halign": "center",
+            "text-margin-y": 8,
+            "text-outline-width": 4,
+            "text-outline-color": "#fcfdf9",
+            "overlay-opacity": 0,
+          },
+        },
+        {
+          selector: "node[type = 'Disease']",
+          style: {
+            "width": 66,
+            "height": 66,
+          },
+        },
+        {
+          selector: "node.active",
+          style: {
+            "border-color": "#c88322",
+            "border-width": 6,
+            "z-index": 20,
+          },
+        },
+        {
+          selector: "node.dimmed",
+          style: {
+            "opacity": 0.22,
+          },
+        },
+        {
+          selector: "edge",
+          style: {
+            "curve-style": "bezier",
+            "line-color": "#aeb9b2",
+            "width": "mapData(score, 0.6, 1.4, 1.3, 4.2)",
+            "line-style": "dashed",
+            "opacity": 0.62,
+            "target-arrow-shape": "none",
+            "source-arrow-shape": "none",
+            "label": "",
+            "font-size": 10,
+            "font-weight": 800,
+            "color": "#52615a",
+            "text-background-color": "#fcfdf9",
+            "text-background-opacity": 0.9,
+            "text-background-padding": 3,
+            "text-rotation": "autorotate",
+          },
+        },
+        {
+          selector: "edge[relation = 'progresses_to']",
+          style: {
+            "line-style": "solid",
+            "line-color": "#7f9188",
+            "width": 2.2,
+            "opacity": 0.7,
+          },
+        },
+        {
+          selector: "edge.active",
+          style: {
+            "line-color": "#c88322",
+            "width": 5,
+            "opacity": 1,
+            "label": "data(label)",
+            "z-index": 18,
+          },
+        },
+        {
+          selector: "edge.dimmed",
+          style: {
+            "opacity": 0.15,
+          },
+        },
+        {
+          selector: "edge:selected",
+          style: {
+            "line-color": "#c88322",
+            "width": 5,
+            "label": "data(label)",
+          },
+        },
+      ],
+    });
+
+    cyInstance.on("tap", "node", (event) => {
+      const node = event.target.data("node");
+      showNodeDetails(node);
+      renderCyGraph(node.id);
+    });
+
+    cyInstance.on("tap", "edge", (event) => {
+      const edge = event.target.data("edge");
+      showEdgeDetails(edge, event.target.data("index"));
+    });
+
+    cyInstance.on("tap", (event) => {
+      if (event.target !== cyInstance) return;
+      cyInstance.elements().removeClass("selected");
+    });
+  } else {
+    cyInstance.elements().remove();
+    cyInstance.add(elements);
+    cyInstance.layout({ name: "preset", fit: true, padding: 38 }).run();
+  }
 }
 
 function renderLegend() {
@@ -548,15 +853,37 @@ function renderTimeline() {
     .join("");
 }
 
+function renderSmokeSummary() {
+  if (!smokeSummaryEl || typeof smokeSummary === "undefined") return;
+  smokeSummaryEl.innerHTML = smokeSummary
+    .map((item) => `
+      <div class="smoke-row">
+        <strong>${item.disease}</strong>
+        <span>${item.relations} relations</span>
+        <small>${item.topGenes.slice(0, 4).join(", ")}${item.topGenes.length > 4 ? "..." : ""}</small>
+      </div>
+    `)
+    .join("");
+}
+
 function renderGraph(activeId = null) {
+  if (viewMode === "smoke") {
+    renderCyGraph(activeId);
+    return;
+  }
+
   currentActiveId = activeId;
   const selectedSource = sourceFilter.value;
   const { visibleEdges, visibleNodes } = visibleGraphData();
 
   nodeCount.textContent = visibleNodes.length;
   edgeCount.textContent = visibleEdges.length;
-  const modeLabel = exampleToggle.checked ? "example graph" : "entity schema graph";
-  graphTitle.textContent = selectedSource === "all" ? `YAML ${modeLabel}` : `${selectedSource} ${modeLabel}`;
+  const modeLabel = viewMode === "smoke" ? "DisGeNET smoke data graph" : viewMode === "example" ? "example graph" : "entity schema graph";
+  graphTitle.textContent = viewMode === "smoke"
+    ? "DisGeNET smoke data graph"
+    : selectedSource === "all"
+      ? `YAML ${modeLabel}`
+      : `${selectedSource} ${modeLabel}`;
   renderedEdges = [];
   renderedNodes = [];
   applyViewBox();
@@ -789,7 +1116,7 @@ sourceFilter.addEventListener("change", () => {
 });
 
 exampleToggle.addEventListener("change", () => {
-  setGraphMode(exampleToggle.checked);
+  setGraphMode(exampleToggle.checked ? "example" : "schema");
   setDetails(exampleToggle.checked ? "Example mode" : "Schema mode", exampleToggle.checked
     ? "Showing concrete example nodes mapped onto the ontology classes. Select a node to see its entity class attributes."
     : "Showing ontology entity classes directly. Select an entity class to inspect confirmed, recommended, and planned attributes.", [
@@ -799,8 +1126,34 @@ exampleToggle.addEventListener("change", () => {
   renderGraph();
 });
 
+document.querySelectorAll("[data-view-mode]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.viewMode;
+    setGraphMode(mode);
+    if (mode === "smoke") {
+      sourceFilter.value = "DisGeNET";
+      setDetails("DisGeNET smoke data", "Showing real DisGeNET API smoke extraction for five liver disease stages. Each edge is a top-ranked Gene-Disease association normalized into the ontology schema.", [
+        ["Diseases", "NAFLD, NASH, Fibrosis, Cirrhosis, HCC"],
+        ["Extraction rule", `Top ${smokeMetadata.top_n} genes per disease where available`],
+        ["Entity/relation count", `${smokeMetadata.entity_count} entities / ${smokeMetadata.relation_count} relations`],
+        ["Validation target", "Gene associated_with Disease"],
+      ]);
+    } else {
+      sourceFilter.value = "all";
+      setDetails(mode === "example" ? "Example mode" : "Schema mode", mode === "example"
+        ? "Showing concrete example nodes mapped onto the ontology classes. Select a node to see its entity class attributes."
+        : "Showing ontology entity classes directly. Select an entity class to inspect confirmed, recommended, and planned attributes.", [
+        ["Display", mode === "example" ? "Example instances" : "Entity classes"],
+        ["Validation target", "ontology_v1.0.yaml"],
+      ]);
+    }
+    renderGraph();
+  });
+});
+
 document.getElementById("resetView").addEventListener("click", () => {
   sourceFilter.value = "all";
+  setGraphMode("schema");
   currentViewBox = { ...defaultViewBox };
   setDetails("Ontology backbone", "Select a node or relation to inspect how the ontology stores entity type, source, evidence level, and YAML-valid relation semantics.", [
     ["Route", "v0.1 -> v0.7 -> v1.0 YAML"],
@@ -809,7 +1162,8 @@ document.getElementById("resetView").addEventListener("click", () => {
   renderGraph();
 });
 
-setGraphMode(false);
+setGraphMode("schema");
 renderLegend();
 renderTimeline();
+renderSmokeSummary();
 renderGraph();

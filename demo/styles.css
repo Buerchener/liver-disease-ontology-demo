@@ -216,6 +216,77 @@ select {
   font-weight: 750;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
+.view-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.view-switch button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.view-switch button.active {
+  background: var(--green);
+  color: #fff;
+}
+
+.smoke-card {
+  margin: -4px 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(47, 125, 87, 0.28);
+  border-radius: 8px;
+  background: #f5faf4;
+}
+
+.smoke-card h3 {
+  margin-bottom: 6px;
+}
+
+.smoke-card p {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.smoke-row {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(216, 222, 216, 0.9);
+}
+
+.smoke-row:first-child {
+  border-top: 0;
+}
+
+.smoke-row strong {
+  font-size: 13px;
+}
+
+.smoke-row span,
+.smoke-row small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .legend {
   display: grid;
   gap: 8px;
@@ -315,6 +386,29 @@ select {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+.cy-graph {
+  width: 100%;
+  height: 610px;
+  display: block;
+  background: #fcfdf9;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#graph.is-hidden,
+.cy-graph.is-hidden {
+  display: none;
+}
+
+.cy-graph canvas {
+  cursor: grab;
+}
+
+.cy-graph:active canvas {
+  cursor: grabbing;
 }
 
 #graph.panning {

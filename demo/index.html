@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Liver Disease Ontology Demo</title>
-    <link rel="stylesheet" href="styles.css?v=source-focus-20260617" />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css?v=cytoscape-smoke-20260618" />
   </head>
   <body>
     <header class="topbar">
@@ -74,10 +75,25 @@
             </select>
           </div>
 
-          <label class="toggle-row" for="exampleToggle">
+          <div class="control-group">
+            <span class="label">Graph view</span>
+            <div class="view-switch" role="group" aria-label="Graph view mode">
+              <button type="button" data-view-mode="schema" class="active">Schema</button>
+              <button type="button" data-view-mode="example">Example</button>
+              <button type="button" data-view-mode="smoke">Smoke data</button>
+            </div>
+          </div>
+
+          <label class="toggle-row is-hidden" for="exampleToggle">
             <input id="exampleToggle" type="checkbox" />
             <span>Open example</span>
           </label>
+
+          <div class="smoke-card is-hidden" id="smokeCard">
+            <h3>DisGeNET smoke extraction</h3>
+            <p>5 disease stages, Top 10 gene associations per stage where available.</p>
+            <div id="smokeSummary"></div>
+          </div>
 
           <div class="control-group">
             <span class="label">Entity classes</span>
@@ -117,6 +133,7 @@
             <button id="resetView" type="button">Reset</button>
           </div>
           <svg id="graph" viewBox="0 0 980 620" role="img" aria-label="Sample liver disease knowledge graph"></svg>
+          <div id="cyGraph" class="cy-graph is-hidden" aria-label="Interactive smoke knowledge graph"></div>
         </section>
 
         <aside class="panel details" aria-label="Selected item details">
@@ -297,6 +314,8 @@
       </section>
     </main>
 
-    <script src="app.js?v=source-focus-20260617"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+    <script src="smoke-data.js?v=cytoscape-smoke-20260618"></script>
+    <script src="app.js?v=cytoscape-smoke-20260618"></script>
   </body>
 </html>
